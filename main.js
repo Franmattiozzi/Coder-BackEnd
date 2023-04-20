@@ -1,77 +1,102 @@
+const fs = require('fs');
+
 class ProductManager {
-  constructor() {
-    this.products = [];
-    this.nextId = 1;
+  constructor(path) {
+    this.path = path;
   }
 
-  addProduct(title, description, price, thumbnail, code, stock) {
-    if (!title || !description || !price || !thumbnail || !code || !stock) {
-      console.error("Todos los campos son obligatorios");
-      return;
-    }
-
-    if (this.products.some((product) => product.code === code)) {
-      console.error(`El código ${code} ya existe`);
-      return;
-    }
-
+  addProduct(product) {
+    const products = this.getProducts();
     const newProduct = {
-      id: this.nextId,
-      title,
-      description,
-      price,
-      thumbnail,
-      code,
-      stock,
+      id: products.length + 1,
+      ...product
     };
-
-    this.products.push(newProduct);
-    this.nextId++;
-
-    console.log(`Producto ${newProduct.title} agregado con éxito`);
+    products.push(newProduct);
+    fs.writeFileSync(this.path, JSON.stringify(products));
+    return newProduct;
   }
 
   getProducts() {
-    return this.products;
+    if (!fs.existsSync(this.path)) {
+      fs.writeFileSync(this.path, '[]');
+    }
+    const products = fs.readFileSync(this.path, 'utf-8');
+    return JSON.parse(products);
   }
 
   getProductById(id) {
-    const product = this.products.find((product) => product.id === id);
+    const products = this.getProducts();
+    return products.find(product => product.id === id);
+  }
 
-    if (!product) {
-      console.error(`Producto con id ${id} Not Found`);
-      return;
+  updateProduct(id, updatedFields) {
+    const products = this.getProducts();
+    const productIndex = products.findIndex(product => product.id === id);
+    if (productIndex === -1) {
+      throw new Error(`Producto con id ${id} no encontrado`);
     }
+    const updatedProduct = {
+      ...products[productIndex],
+      ...updatedFields
+    };
+    products[productIndex] = updatedProduct;
+    fs.writeFileSync(this.path, JSON.stringify(products));
+    return updatedProduct;
+  }
 
-    return product;
+  deleteProduct(id) {
+    const products = this.getProducts();
+    const filteredProducts = products.filter(product => product.id !== id);
+    fs.writeFileSync(this.path, JSON.stringify(filteredProducts));
   }
 }
 
-const productManager = new ProductManager();
+const productManager = new ProductManager('./products.json');
 
-productManager.addProduct(
-  "Camiseta",
-  "Camiseta de Juventus",
-  12000,
-  "https://media.solodeportes.com.ar/media/catalog/product/cache/7c4f9b393f0b8cb75f2b74fe5e9e52aa/c/a/camiseta-juventus-adidas-oficial-blanca-36645964-100020dw5455001-1.jpg",
-  "1",
-  3
-);
+// Agregar un producto
+const newProduct = {
+  title: 'Producto 1',
+  description: 'Descripción del producto 1',
+  price: 10.99,
+  thumbnail: 'https://imagen.com/producto1.jpg',
+  code: 'PRD001',
+  stock: 20
+};
+const addedProduct = productManager.addProduct(newProduct);
+console.log('Producto agregado:', addedProduct);
 
-productManager.addProduct(
-  "Gorra",
-  "Gorra de Phoenix Suns",
-  5500,
-  "https://media.newera.com.ar/catalog/product/cache/06cfaa02c67cf3a5c3c05d775284c631/6/0/60243119-gorra-new-era-phoenix-suns-nba22-draft-920_1_.jpg",
-  "2",
-  4
-);
+// Agregar otro producto
+const anotherProduct = {
+  title: 'Producto 2',
+  description: 'Descripción del producto 2',
+  price: 19.99,
+  thumbnail: 'https://imagen.com/producto2.jpg',
+  code: 'PRD002',
+  stock: 15
+};
+const addedProduct2 = productManager.addProduct(anotherProduct);
+console.log('Producto agregado:', addedProduct2);
 
-const products = productManager.getProducts();
-console.log(products);
+// Obtener todos los productos
+const allProducts = productManager.getProducts();
+console.log('Todos los productos:', allProducts);
 
-const product = productManager.getProductById(1);
-console.log(product);
+// Obtener un producto por id
+const productId = 1;
+const productById = productManager.getProductById(productId);
+console.log(`Producto con id ${productId}:`, productById);
 
-const notFoundProduct = productManager.getProductById(3);
-console.log(notFoundProduct);
+// Actualizar un producto por id
+const productIdToUpdate = 2;
+const updatedProductFields = {
+  title: 'Producto 2 - actualizado',
+  price: 24.99,
+  stock: 10
+};
+const updatedProduct = productManager.updateProduct(productIdToUpdate, updatedProductFields);
+console.log(`Producto con id ${productIdToUpdate} actualizado:`, updatedProduct);
+
+// Eliminar un producto por id
+const productIdToDelete = 1;
+productManager.deleteProduct(productIdToDelete);
+console.log(`Producto con id ${productIdToDelete} eliminado`);
