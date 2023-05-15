@@ -1,11 +1,18 @@
 const express = require('express');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
+const productRoutes = require('./routes/productRoutes');
+const cartRoutes = require('./routes/cartRoutes');
+
+app.use('/api/products', productRoutes);
+app.use('/api/carts', cartRoutes);
 
 const app = express();
 const PORT = 8080;
 
 app.use(express.json());
+
+app.use('/api/carts', cartsRouter);
 
 const productosRouter = express.Router();
 app.use('/api/productos', productosRouter);
