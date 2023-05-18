@@ -3,11 +3,24 @@ const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const productRoutes = require('./routes/productRoutes');
 const cartRoutes = require('./routes/cartRoutes');
+const exphbs = require('express-handlebars');
+const socketIO = require('socket.io');
+
+const app = express();
+const server = app.listen(3000, () => {
+  console.log('Servidor en funcionamiento en el puerto 3000');
+});
+const io = socketIO(server);
+
+app.engine('handlebars', exphbs());
+app.set('view engine', 'handlebars');
+
+app.set('views', 'views');
+
 
 app.use('/api/products', productRoutes);
 app.use('/api/carts', cartRoutes);
 
-const app = express();
 const PORT = 8080;
 
 app.use(express.json());
@@ -109,5 +122,14 @@ productosRouter.delete('/:pid', (req, res) => {
     res.status(200).json(productos);
   }
 });
+
+io.on('connection', (socket) => {
+  console.log('Un cliente se ha conectado');
+
+  socket.on('createProduct', (product) => {
+  });
+
+});
+
 
 app.listen(8080, () => console.log('Servidor escuchando en puerto 8080'));
